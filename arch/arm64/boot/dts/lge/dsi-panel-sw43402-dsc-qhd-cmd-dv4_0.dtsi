@@ -10,12 +10,12 @@
  * GNU General Public License for more details.
  */
 
-//#include "dsi-panel-sw43402-dynamic-resolution-switching-dv4_0.dtsi"
+#include "dsi-panel-sw43402-dynamic-resolution-switching-dv4_0.dtsi"
 #include "dsi-panel-sw43402-dynamic-resolution-switching-config.dtsi"
 
 &mdss_mdp {
     dsi_sw43402_dsc_qhd_cmd_dv4_0: qcom,mdss_dsi_sw43402_dsc_qhd_cmd_dv4_0 {
-        qcom,mdss-dsi-panel-name = "SW43402 cmd mode dsc dsi panel";
+        qcom,mdss-dsi-panel-name = "SW43402 cmd mode dsc dsi panel 4_0";
 		qcom,mdss-dsi-panel-type = "dsi_cmd_mode";
 		qcom,mdss-dsi-panel-framerate = <60>;
 		qcom,mdss-dsi-virtual-channel-id = <0>;
