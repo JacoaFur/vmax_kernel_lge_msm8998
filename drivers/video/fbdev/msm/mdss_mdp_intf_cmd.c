@@ -923,7 +923,7 @@ int mdss_mdp_resource_control(struct mdss_mdp_ctl *ctl, u32 sw_event)
 
 			/* start work item to gate */
 			if (mdata->enable_gate)
-				schedule_work(&ctx->gate_clk_work);
+				queue_work(system_highpri_wq, &ctx->gate_clk_work);
 
 			/* start work item to shut down after delay */
 			schedule_delayed_work(
