@@ -337,6 +337,7 @@ static int g_playback_atten[2] = { 0, 0 }; // HAL stream volume, 0.5 dB steps
 static int g_sabre_cf_num = 8; // default = 8
 static int g_dop_flag = 0;
 static int g_auto_mute_flag = 0;
+static int g_soft_mute_ms = 150;        // soft mute ramp before the I2S clocks stop
 #ifdef ES9218P_DEBUG
 static int g_debug_delay = 500; // ESS pop-click debugging step time delay
 #endif
@@ -1231,6 +1232,29 @@ static ssize_t es9218_status_show(struct device *dev,
 }
 static DEVICE_ATTR(status, S_IRUGO, es9218_status_show, NULL);
 
+// Millisecond tunables for the stop/standby transitions
+static ssize_t es9218_ms_store(const char *buf, size_t count, int *ms, int max)
+{
+    int input_val;
+
+    if (kstrtoint(buf, 10, &input_val) || input_val < 0 || input_val > max)
+        return -EINVAL;
+    *ms = input_val;
+    return count;
+}
+
+static ssize_t soft_mute_ms_show(struct device *dev,
+                   struct device_attribute *attr, char *buf)
+{
+    return sprintf(buf, "%d\n", g_soft_mute_ms);
+}
+static ssize_t soft_mute_ms_store(struct device *dev,
+                   struct device_attribute *attr, const char *buf, size_t count)
+{
+    return es9218_ms_store(buf, count, &g_soft_mute_ms, 1000);
+}
+static DEVICE_ATTR(soft_mute_ms, S_IWUSR|S_IRUGO, soft_mute_ms_show, soft_mute_ms_store);
+
 static struct attribute *es9218_attrs[] = {
 #ifdef CONFIG_SND_SOC_LGE_ESS_DIGITAL_FILTER
 	&dev_attr_fade_mute_count.attr,
@@ -1244,6 +1268,7 @@ static struct attribute *es9218_attrs[] = {
     &dev_attr_left_volume.attr,
 	&dev_attr_right_volume.attr,
     &dev_attr_status.attr,
+    &dev_attr_soft_mute_ms.attr,
     NULL
 };
 
@@ -3420,6 +3445,7 @@ static int es9218_mute(struct snd_soc_dai *dai, int mute)
 
 	if(mute){
 		es9218_write_reg(g_es9218_priv->i2c_client, ES9218P_REG_08, 0xAA); // dac soft mute
+		msleep(g_soft_mute_ms); // the clocks stop next; a ramp cut short is audible
 	} else {
 		if(g_dop_flag){
 			pr_info("%s(): dop add delay\n", __func__);
