@@ -800,7 +800,9 @@ static int touch_init_notify(struct touch_core_data *ts)
 
 static int touch_init_works(struct touch_core_data *ts)
 {
-	ts->wq = create_singlethread_workqueue("touch_wq");
+	// highpri: screen-on IC init otherwise waits behind the first UI frame
+	ts->wq = alloc_ordered_workqueue("touch_wq",
+			WQ_MEM_RECLAIM | WQ_HIGHPRI);
 
 	if (!ts->wq) {
 		TOUCH_E("failed to create workqueue\n");
