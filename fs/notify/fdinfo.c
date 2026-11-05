@@ -12,11 +12,19 @@
 #include <linux/seq_file.h>
 #include <linux/proc_fs.h>
 #include <linux/exportfs.h>
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+#include <linux/susfs_def.h>
+#endif
 
 #include "inotify/inotify.h"
 #include "../fs/mount.h"
 
 #if defined(CONFIG_PROC_FS)
+
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+extern bool susfs_is_inode_sus_kstat(struct inode *inode, bool *out_is_fuse);
+extern void susfs_sus_kstat_spoof_inotify_fdinfo(unsigned long *out_target_ino, dev_t *out_target_dev);
+#endif
 
 #if defined(CONFIG_INOTIFY_USER) || defined(CONFIG_FANOTIFY)
 
@@ -90,8 +98,19 @@ static void inotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
 		 * used only internally to the kernel.
 		 */
 		u32 mask = mark->mask & IN_ALL_EVENTS;
+		unsigned long ino = inode->i_ino;
+		dev_t dev = inode->i_sb->s_dev;
+
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+		if (susfs_is_current_app_uid()) {
+			bool is_fuse = false;
+
+			if (susfs_is_inode_sus_kstat(inode, &is_fuse))
+				susfs_sus_kstat_spoof_inotify_fdinfo(&ino, &dev);
+		}
+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 		seq_printf(m, "inotify wd:%x ino:%lx sdev:%x mask:%x ignored_mask:%x ",
-			   inode_mark->wd, inode->i_ino, inode->i_sb->s_dev,
+			   inode_mark->wd, ino, dev,
 			   mask, mark->ignored_mask);
 		show_mark_fhandle(m, inode);
 		seq_putc(m, '\n');
